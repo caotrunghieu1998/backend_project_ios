@@ -14,6 +14,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// API user api public
+Route::group(['prefix'=>'user'], function(){
+    Route::get('/active-account', 'Api\UserController@activeAccount');
+});
+
+Route::middleware('auth:api')->group(function (){
+    Route::post('/register', 'Api\UserController@register');
+});
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
