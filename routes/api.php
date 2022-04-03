@@ -17,10 +17,13 @@ use Illuminate\Support\Facades\Route;
 // API user api public
 Route::group(['prefix'=>'user'], function(){
     Route::get('/active-account', 'Api\UserController@activeAccount');
+    Route::post('/login', 'Api\UserController@login');
 });
 
+// Group api need to login
 Route::middleware('auth:api')->group(function (){
-    Route::post('/register', 'Api\UserController@register');
+    // User
+    Route::post('/user/register', 'Api\UserController@register');
 });
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
