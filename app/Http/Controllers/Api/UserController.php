@@ -249,4 +249,49 @@ class UserController extends Controller
             return response($this->apiResult->toResponse());
         }
     }
+
+    // Change active Status
+    public function changeActiveStatus(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $isAdmin = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                ->where([
+                    ['user_types.rule', '=', 'ADMIN'],
+                    ['users.id', '=', $user->id]
+                ])
+                ->select('users.*')
+                ->first();
+            if ($isAdmin) {
+                // Check Staff
+                $staff = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                    ->where([
+                        ['users.id', '=', $request->user_id]
+                    ])
+                    ->select('users.*', 'user_types.rule')
+                    ->first();
+                if (!$staff) {
+                    $this->apiResult->setError("Cannot find the Staff");
+                } else if ($staff->rule == 'ADMIN') {
+                    $this->apiResult->setError("Cannot deactive for ADMIN user");
+                } else {
+                    $userStatus = $staff->is_active == 1 ? false : true;
+                    $staff->update(['is_active' => $userStatus]);
+                    $message = $userStatus == false ?
+                        "Deactive staff \"" . $staff->name . "\" success" :
+                        "Active staff \"" . $staff->name . "\" success";
+                    $this->apiResult->setData($message);
+                }
+            } else {
+                $this->apiResult->setError("You are not ADMIN type");
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change active Status",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
 }

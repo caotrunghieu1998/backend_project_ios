@@ -29,6 +29,7 @@ Route::middleware('auth:api')->group(function (){
         Route::post('logout', 'Api\UserController@logout');
         Route::get('profile', 'Api\UserController@getProfile');
         Route::get('list-user', 'Api\UserController@getListUser');
+        Route::post('change-active-status', 'Api\UserController@changeActiveStatus');
     });
 });
 
