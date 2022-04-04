@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\ApiResult\ApiResult;
 use App\Http\Controllers\Controller;
+use App\SupportFunction\SupportFunction;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -78,7 +80,7 @@ class UserController extends Controller
                 $to_email = $user->email;
                 $data = array(
                     "fullName" => $user->name,
-                    "url_verify" => $this->get_url_sever() . '/api/user/active-account?email_verify_token=' . $token,
+                    "url_verify" => SupportFunction::get_url_sever() . '/api/user/active-account?email_verify_token=' . $token,
                 );
 
                 Mail::send('emails.confirm', $data, function ($message) use ($to_name, $to_email) {
@@ -111,7 +113,7 @@ class UserController extends Controller
             if ($user) {
                 $isSuccess = true;
                 // Get date
-                $date = $this->getDatetimeVietNamNow();
+                $date = SupportFunction::getDatetimeVietNamNow();
                 // Set value
                 $user->is_confirm = true;
                 $user->email_verify_token = null;
@@ -135,35 +137,7 @@ class UserController extends Controller
 
         return view('emails.activeAccount', $data);
     }
-
-    // FUNCTION SUPPORT
-    // Get datetime Viet Nam Now
-    private function getDatetimeVietNamNow()
-    {
-        // Get date
-        date_default_timezone_set('Asia/Ho_Chi_Minh');
-        return date('Y/m/d H:i:s', time());
-    }
-
-    //Get URL Sever
-    public function get_url_sever()
-    {
-        $server_name = $_SERVER['SERVER_NAME'];
-
-        if (!in_array($_SERVER['SERVER_PORT'], [80, 443])) {
-            $port = ":$_SERVER[SERVER_PORT]";
-        } else {
-            $port = '';
-        }
-
-        if (!empty($_SERVER['HTTPS']) && (strtolower($_SERVER['HTTPS']) == 'on' || $_SERVER['HTTPS'] == '1')) {
-            $scheme = 'https';
-        } else {
-            $scheme = 'http';
-        }
-        return $scheme . '://' . $server_name . $port;
-    }
-
+    
     // Login
     public function login(Request $request)
     {
@@ -196,6 +170,26 @@ class UserController extends Controller
             } else {
                 $this->apiResult->setError('Wrong at email or password');
             }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when register",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    // Logout
+    public function logout(Request $request)
+    {
+        try {
+            $user_id = $request->user()->id;
+            // Clear all token
+            DB::table('oauth_access_tokens')
+            ->where('user_id', $user_id)
+                ->delete();
+            $this->apiResult->setData('Logout successful');
             return response($this->apiResult->toResponse());
         } catch (Exception $ex) {
             $this->apiResult->setError(

@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Route;
 // API PUBLIC
 // User
 Route::group(['prefix'=>'user'], function(){
-    Route::get('/active-account', 'Api\UserController@activeAccount');
-    Route::post('/login', 'Api\UserController@login');
+    Route::get('active-account', 'Api\UserController@activeAccount');
+    Route::post('login', 'Api\UserController@login');
 });
 
 // API NEED TO LOGIN
@@ -26,6 +26,7 @@ Route::middleware('auth:api')->group(function (){
     // User
     Route::group(['prefix'=>'user'], function(){
         Route::post('register', 'Api\UserController@register');
+        Route::post('logout', 'Api\UserController@logout');
     });
 });
 
