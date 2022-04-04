@@ -173,7 +173,7 @@ class UserController extends Controller
             return response($this->apiResult->toResponse());
         } catch (Exception $ex) {
             $this->apiResult->setError(
-                "System error when register",
+                "System error when login",
                 $ex->getMessage()
             );
             return response($this->apiResult->toResponse());
@@ -193,7 +193,22 @@ class UserController extends Controller
             return response($this->apiResult->toResponse());
         } catch (Exception $ex) {
             $this->apiResult->setError(
-                "System error when register",
+                "System error when logout",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
+    // Get profile
+    public function getProfile(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $this->apiResult->setData($user);
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when get profile",
                 $ex->getMessage()
             );
             return response($this->apiResult->toResponse());
