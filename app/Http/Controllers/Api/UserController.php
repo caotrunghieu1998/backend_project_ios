@@ -54,11 +54,11 @@ class UserController extends Controller
             $today = getdate();
             // Register User
             $user = User::create([
-                'type_id' => $request->type_id,
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
+                'type_id' => $request->type_id,
             ]);
             $token = Hash::make(Str::random(32));
             $user->email_verify_token = $token;
@@ -151,5 +151,47 @@ class UserController extends Controller
             $scheme = 'http';
         }
         return $scheme . '://' . $server_name . $port;
+    }
+
+    // Login
+    public function login(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'email' => 'required|max:60|min:6|email',
+                'password' => 'required|max:60|min:6',
+            ]);
+            if ($validator->fails()) {
+                return response($this->result->setError('Some field is not true !!'));
+            }
+            $validated = ['email' => $request->email, 'password' => $request->password];
+            if (auth()->attempt($validated)) {
+                $user = auth()->user();
+                if ($user->is_confirm == 0) {
+                    $this->apiResult->setError("This account isn't confirm email");
+                } else if ($user->is_active == 0) {
+                    $this->apiResult->setError("This account has been block");
+                } else {
+                    $user = User::find($user->id);
+                    $userLocation = "user_" . $user->id;
+                    // Create Token
+                    $token = $user->createToken($userLocation)->accessToken;
+                    $data = [
+                        "user" => $user,
+                        "token" => $token,
+                    ];
+                    $this->apiResult->setData($data);
+                }
+            } else {
+                $this->apiResult->setError('Wrong at email or password');
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when register",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
     }
 }
