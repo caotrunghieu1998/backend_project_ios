@@ -137,7 +137,7 @@ class UserController extends Controller
 
         return view('emails.activeAccount', $data);
     }
-    
+
     // Login
     public function login(Request $request)
     {
@@ -187,7 +187,7 @@ class UserController extends Controller
             $user_id = $request->user()->id;
             // Clear all token
             DB::table('oauth_access_tokens')
-            ->where('user_id', $user_id)
+                ->where('user_id', $user_id)
                 ->delete();
             $this->apiResult->setData('Logout successful');
             return response($this->apiResult->toResponse());
@@ -209,6 +209,41 @@ class UserController extends Controller
         } catch (Exception $ex) {
             $this->apiResult->setError(
                 "System error when get profile",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    // Get List User
+    public function getListUser(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $isAdmin = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                ->where([
+                    ['user_types.rule', '=', 'ADMIN'],
+                    ['users.id', '=', $user->id]
+                ])
+                ->select('users.*')
+                ->first();
+            if ($isAdmin) {
+                // Register User
+                $listUser = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                    ->where([
+                        ['user_types.rule', '!=', 'ADMIN']
+                    ])
+                    ->select('users.*', 'user_types.rule')
+                    ->orderBy('user_types.id')
+                    ->get();
+                $this->apiResult->setData($listUser);
+            } else {
+                $this->apiResult->setError("You are not ADMIN type");
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when get List User",
                 $ex->getMessage()
             );
             return response($this->apiResult->toResponse());
