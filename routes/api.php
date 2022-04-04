@@ -14,16 +14,20 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// API user api public
+// API PUBLIC
+// User
 Route::group(['prefix'=>'user'], function(){
-    Route::get('/active-account', 'Api\UserController@activeAccount');
-    Route::post('/login', 'Api\UserController@login');
+    Route::get('active-account', 'Api\UserController@activeAccount');
+    Route::post('login', 'Api\UserController@login');
 });
 
-// Group api need to login
+// API NEED TO LOGIN
 Route::middleware('auth:api')->group(function (){
     // User
-    Route::post('/user/register', 'Api\UserController@register');
+    Route::group(['prefix'=>'user'], function(){
+        Route::post('register', 'Api\UserController@register');
+        Route::post('logout', 'Api\UserController@logout');
+    });
 });
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
