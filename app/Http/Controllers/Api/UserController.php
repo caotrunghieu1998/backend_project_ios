@@ -294,4 +294,123 @@ class UserController extends Controller
             return response($this->apiResult->toResponse());
         }
     }
+
+    /** SEND CODE RESET PASSWORD TO MAIL*/
+    public function sentCodeResetPasswordToMail(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'email' => 'required|email|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Please send mail name");
+                return response($this->apiResult->toResponse());
+            }
+            // Check Email Exist
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+                // Add Code reset password
+                $codeReset = Str::random(8);
+                $user->code_reset_password = $codeReset;
+                $user->save();
+                // Sent mail
+                $to_name = "Ét o ét coffee";
+                $to_email = $user->email;
+                $data = array(
+                    "fullName" => $user->name,
+                    "code" => $codeReset,
+                );
+                Mail::send('emails.sendCodeResetPassword', $data, function ($message) use ($to_name, $to_email) {
+                    $message->to($to_email)->subject('Forget Password'); //send this mail with subject
+                    $message->from($to_email, $to_name); //send from this mail
+                });
+                $this->apiResult->setData("Sent Code to mail success");
+            } else {
+                $this->apiResult->setError("This Email is not exist");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when send code reset password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    /** Set code reset password null */
+    public function setCodeResetPasswordNull(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'email' => 'required|email|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Please send the mail name");
+                return response($this->apiResult->toResponse());
+            }
+            // Check Email Exist
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+                // Set Null Code Reset Password
+                $user->code_reset_password = null;
+                $user->save();
+                $this->apiResult->setData("Set Null Code Reset Password success");
+            } else {
+                $this->apiResult->setError("This Email is not exist");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when Set Null Code Reset Password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    /** RESET PASSWORD */
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'code' => 'required|min:8',
+                'email' => 'required|email|min:6',
+                'new_password' => 'required|min:6|max:60',
+                'confirm_password' => 'required|min:6|max:60',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Some field is not true");
+                return response($this->apiResult->toResponse());
+            }
+            // Password and re password
+            if ($request->new_password != $request->confirm_password) {
+                $this->apiResult->setError("Password and confirm password is not same");
+                return response($this->apiResult->toResponse());
+            }
+            // Find Member
+            $user = User::where([
+                ['email', '=', $request->email],
+                ['code_reset_password', '=', $request->code]
+            ])->first();
+            if ($user) {
+                $user->code_reset_password = null;
+                $user->password = bcrypt($request->new_password);
+                $user->save();
+                $this->apiResult->setData("Update password success");
+            } else {
+                $this->apiResult->setError("Wrong at your code !!");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when reset password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
 }

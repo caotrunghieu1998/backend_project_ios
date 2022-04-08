@@ -225,7 +225,7 @@
                     <p>Don't give this code to others</p>
                     <p>Have a good day for you</p>
                     <!-- Action -->
-                    <p>Thanks,<br>We are team J</p>
+                    <p>Thanks,<br>We are Ét o Ét Coffee</p>
                   </td>
                 </tr>
               </table>
