@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 Route::group(['prefix'=>'user'], function(){
     Route::get('active-account', 'Api\UserController@activeAccount');
     Route::post('login', 'Api\UserController@login');
+    Route::post('send-code-reset-password', 'Api\UserController@sentCodeResetPasswordToMail');
+    Route::post('set-code-reset-password-null', 'Api\UserController@setCodeResetPasswordNull');
+    Route::post('reset-password', 'Api\UserController@resetPassword');
 });
 
 // API NEED TO LOGIN
