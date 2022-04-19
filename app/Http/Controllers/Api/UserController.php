@@ -413,4 +413,40 @@ class UserController extends Controller
             return response($this->apiResult->toResponse());
         }
     }
+
+     // Change password
+    public function changeUserPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'old_password' => 'required|max:60|min:6',
+                'new_password' => 'required|max:60|min:6',
+                'confirm_new_password' => 'required|max:60|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Some Field is not true");
+            } else if ($request->new_password != $request->confirm_new_password) {
+                $this->apiResult->setError("Password and confirm password is not same");
+            } else {
+                $user = $request->user();
+                if (!password_verify($request->old_password, $user->password)) {
+                    $this->apiResult->setError("Wrong at old password");
+                } else {
+                    // Update password
+                    $user->password = bcrypt($request->new_password);
+                    $user->save();
+                    $this->logout($request);
+                    $this->apiResult->setData("Update Password Success,Please Login again");
+                }
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change user password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
 }

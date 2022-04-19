@@ -33,6 +33,7 @@ Route::middleware('auth:api')->group(function (){
         Route::get('profile', 'Api\UserController@getProfile');
         Route::get('list-user', 'Api\UserController@getListUser');
         Route::post('change-active-status', 'Api\UserController@changeActiveStatus');
+        Route::post('change-password', 'Api\UserController@changeUserPassword');
     });
 });
 
