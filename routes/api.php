@@ -35,6 +35,11 @@ Route::middleware('auth:api')->group(function (){
         Route::post('change-active-status', 'Api\UserController@changeActiveStatus');
         Route::post('change-password', 'Api\UserController@changeUserPassword');
     });
+
+    // Product
+    Route::group(['prefix'=>'product'], function(){
+        Route::post('create', 'Api\ProductController@addNewProduct');
+    });
 });
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
