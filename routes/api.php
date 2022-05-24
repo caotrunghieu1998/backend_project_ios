@@ -40,6 +40,7 @@ Route::middleware('auth:api')->group(function (){
     // Product
     Route::group(['prefix'=>'product'], function(){
         Route::post('create', 'Api\ProductController@addNewProduct');
+        Route::get('list-product', 'Api\ProductController@getListProduct');
     });
 });
 
