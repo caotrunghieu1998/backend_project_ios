@@ -147,7 +147,8 @@ class UserController extends Controller
                 'password' => 'required|max:60|min:6',
             ]);
             if ($validator->fails()) {
-                return response($this->result->setError('Some field is not true !!'));
+                $this->apiResult->setError("Some field is not true !!");
+                return response($this->apiResult->toResponse());
             }
             $validated = ['email' => $request->email, 'password' => $request->password];
             if (auth()->attempt($validated)) {
@@ -246,6 +247,234 @@ class UserController extends Controller
                 "System error when get List User",
                 $ex->getMessage()
             );
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    // Change active Status
+    public function changeActiveStatus(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $isAdmin = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                ->where([
+                    ['user_types.rule', '=', 'ADMIN'],
+                    ['users.id', '=', $user->id]
+                ])
+                ->select('users.*')
+                ->first();
+            if ($isAdmin) {
+                // Check Staff
+                $staff = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                    ->where([
+                        ['users.id', '=', $request->user_id]
+                    ])
+                    ->select('users.*', 'user_types.rule')
+                    ->first();
+                if (!$staff) {
+                    $this->apiResult->setError("Cannot find the Staff");
+                } else if ($staff->rule == 'ADMIN') {
+                    $this->apiResult->setError("Cannot deactive for ADMIN user");
+                } else {
+                    $userStatus = $staff->is_active == 1 ? false : true;
+                    $staff->update(['is_active' => $userStatus]);
+                    $message = $userStatus == false ?
+                        "Deactive staff \"" . $staff->name . "\" success" :
+                        "Active staff \"" . $staff->name . "\" success";
+                    $this->apiResult->setData($message);
+                }
+            } else {
+                $this->apiResult->setError("You are not ADMIN type");
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change active Status",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    /** SEND CODE RESET PASSWORD TO MAIL*/
+    public function sentCodeResetPasswordToMail(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'email' => 'required|email|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Please send mail name");
+                return response($this->apiResult->toResponse());
+            }
+            // Check Email Exist
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+                // Add Code reset password
+                $codeReset = Str::random(8);
+                $user->code_reset_password = $codeReset;
+                $user->save();
+                // Sent mail
+                $to_name = "Ét o ét coffee";
+                $to_email = $user->email;
+                $data = array(
+                    "fullName" => $user->name,
+                    "code" => $codeReset,
+                );
+                Mail::send('emails.sendCodeResetPassword', $data, function ($message) use ($to_name, $to_email) {
+                    $message->to($to_email)->subject('Forget Password'); //send this mail with subject
+                    $message->from($to_email, $to_name); //send from this mail
+                });
+                $this->apiResult->setData("Sent Code to mail success");
+            } else {
+                $this->apiResult->setError("This Email is not exist");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when send code reset password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    /** Set code reset password null */
+    public function setCodeResetPasswordNull(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'email' => 'required|email|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Please send the mail name");
+                return response($this->apiResult->toResponse());
+            }
+            // Check Email Exist
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+                // Set Null Code Reset Password
+                $user->code_reset_password = null;
+                $user->save();
+                $this->apiResult->setData("Set Null Code Reset Password success");
+            } else {
+                $this->apiResult->setError("This Email is not exist");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when Set Null Code Reset Password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    /** RESET PASSWORD */
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'code' => 'required|min:8',
+                'email' => 'required|email|min:6',
+                'new_password' => 'required|min:6|max:60',
+                'confirm_password' => 'required|min:6|max:60',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Some field is not true");
+                return response($this->apiResult->toResponse());
+            }
+            // Password and re password
+            if ($request->new_password != $request->confirm_password) {
+                $this->apiResult->setError("Password and confirm password is not same");
+                return response($this->apiResult->toResponse());
+            }
+            // Find Member
+            $user = User::where([
+                ['email', '=', $request->email],
+                ['code_reset_password', '=', $request->code]
+            ])->first();
+            if ($user) {
+                $user->code_reset_password = null;
+                $user->password = bcrypt($request->new_password);
+                $user->save();
+                $this->apiResult->setData("Update password success");
+            } else {
+                $this->apiResult->setError("Wrong at your code !!");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when reset password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+     // Change password
+    public function changeUserPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'old_password' => 'required|max:60|min:6',
+                'new_password' => 'required|max:60|min:6',
+                'confirm_new_password' => 'required|max:60|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Some Field is not true");
+            } else if ($request->new_password != $request->confirm_new_password) {
+                $this->apiResult->setError("Password and confirm password is not same");
+            } else {
+                $user = $request->user();
+                if (!password_verify($request->old_password, $user->password)) {
+                    $this->apiResult->setError("Wrong at old password");
+                } else {
+                    // Update password
+                    $user->password = bcrypt($request->new_password);
+                    $user->save();
+                    $this->logout($request);
+                    $this->apiResult->setData("Update Password Success,Please Login again");
+                }
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change user password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    // Change password
+    public function changeUserName(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'name'  => 'required|min:2|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Field name is not exist.");
+            } else {
+                $user = $request->user();
+
+                // Update password
+                $user->name = $request->name;
+                $user->save();
+                $this->apiResult->setData("Update user name success.");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change user name",
+                $ex->getMessage()
+            );
+        } finally {
             return response($this->apiResult->toResponse());
         }
     }
