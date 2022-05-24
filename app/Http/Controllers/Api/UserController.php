@@ -147,7 +147,8 @@ class UserController extends Controller
                 'password' => 'required|max:60|min:6',
             ]);
             if ($validator->fails()) {
-                return response($this->result->setError('Some field is not true !!'));
+                $this->apiResult->setError("Some field is not true !!");
+                return response($this->apiResult->toResponse());
             }
             $validated = ['email' => $request->email, 'password' => $request->password];
             if (auth()->attempt($validated)) {
@@ -221,21 +222,24 @@ class UserController extends Controller
         try {
             $user = $request->user();
             $isAdmin = User::join('user_types', 'users.type_id', '=', 'user_types.id')
-                ->where([
-                    ['user_types.rule', '=', 'ADMIN'],
-                    ['users.id', '=', $user->id]
-                ])
+            ->where([
+                ['user_types.rule', '=', 'ADMIN'],
+                ['users.id', '=', $user->id]
+            ])
                 ->select('users.*')
                 ->first();
             if ($isAdmin) {
-                // Register User
-                $listUser = User::join('user_types', 'users.type_id', '=', 'user_types.id')
-                    ->where([
-                        ['user_types.rule', '!=', 'ADMIN']
-                    ])
+                // Get list user
+                $query = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                ->where([
+                    ['user_types.rule', '!=', 'ADMIN']
+                ])
                     ->select('users.*', 'user_types.rule')
-                    ->orderBy('user_types.id')
-                    ->get();
+                    ->orderBy('user_types.id');
+                if ($request->has('keyword')) {
+                    $query->where('users.name', 'like', '%' . $request->keyword . '%');
+                }
+                $listUser = $query->get();
                 $this->apiResult->setData($listUser);
             } else {
                 $this->apiResult->setError("You are not ADMIN type");
@@ -443,6 +447,34 @@ class UserController extends Controller
         } catch (Exception $ex) {
             $this->apiResult->setError(
                 "System error when change user password",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
+
+    // Change password
+    public function changeUserName(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->input(), [
+                'name'  => 'required|min:2|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                $this->apiResult->setError("Field name is not exist.");
+            } else {
+                $user = $request->user();
+
+                // Update password
+                $user->name = $request->name;
+                $user->save();
+                $this->apiResult->setData("Update user name success.");
+            }
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change user name",
                 $ex->getMessage()
             );
         } finally {

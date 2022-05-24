@@ -8,14 +8,15 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^7.2.5",
+        "php": "^7.4",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^6.3",
         "intervention/image": "^2.7",
         "laravel/framework": "^7.0",
         "laravel/passport": "~9.0",
-        "laravel/tinker": "^2.0"
+        "laravel/tinker": "^2.0",
+        "lcobucci/jwt": "^3.0"
     },
     "require-dev": {
         "facade/ignition": "^2.0",
@@ -27,7 +28,8 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+		"platform-check": false
     },
     "extra": {
         "laravel": {
