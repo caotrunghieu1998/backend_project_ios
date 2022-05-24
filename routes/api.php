@@ -41,6 +41,7 @@ Route::middleware('auth:api')->group(function (){
     Route::group(['prefix'=>'product'], function(){
         Route::post('create', 'Api\ProductController@addNewProduct');
         Route::get('list-product', 'Api\ProductController@getListProduct');
+        Route::post('update', 'Api\ProductController@updateProduct');
     });
 });
 
