@@ -101,4 +101,36 @@ class ProductController extends Controller
             return response($this->apiResult->toResponse());
         }
     }
+
+    // Get List Product
+    public function getListProduct(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'screen'    => 'required|string|min:2|max:200',
+            ]);
+            if ($validator->fails()) {
+                $this->apiResult->setError("What is your screen ?");
+            } else {
+                // Get list product
+                $query = Product::select('products.*')
+                ->orderBy('products.id');
+                if ($request->has('keyword')) {
+                    $query->where('products.name', 'like', '%' . $request->keyword . '%');
+                }
+                if ($request->screen == "SHOP") {
+                    $query->where('products.isActive', '=', true);
+                }
+                $listProduct = $query->get();
+                $this->apiResult->setData($listProduct);
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when get List product",
+                $ex->getMessage()
+            );
+            return response($this->apiResult->toResponse());
+        }
+    }
 }
