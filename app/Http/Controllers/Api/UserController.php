@@ -279,9 +279,10 @@ class UserController extends Controller
                 } else if ($staff->rule == 'ADMIN') {
                     $this->apiResult->setError("Cannot deactive for ADMIN user");
                 } else {
-                    $userStatus = $staff->is_active == 1 ? false : true;
-                    $staff->update(['is_active' => $userStatus]);
-                    $message = $userStatus == false ?
+                    $userStatus = $staff->is_active == 1;
+                    $staff->is_active = !$userStatus;
+                    $staff->save();
+                    $message = $userStatus == true ?
                         "Deactive staff \"" . $staff->name . "\" success" :
                         "Active staff \"" . $staff->name . "\" success";
                     $this->apiResult->setData($message);
