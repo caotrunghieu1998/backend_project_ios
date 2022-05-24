@@ -199,4 +199,35 @@ class ProductController extends Controller
             return response($this->apiResult->toResponse());
         }
     }
+
+    // Change product active Status
+    public function changeActiveStatus(Request $request)
+    {
+        try {
+            // Find product
+            $product = Product::where([
+                ['id', '=', $request->id]
+            ])
+                ->first();
+            if (!$product) {
+                $this->apiResult->setError("Cannot find the product");
+            } else {
+                $productStatus = $product->isActive == 1;
+                $product->isActive = !$productStatus;
+                $product->save();
+                $message = $productStatus == true ?
+                    "Deactive staff \"" . $product->name . "\" success" :
+                    "Active staff \"" . $product->name . "\" success";
+                $this->apiResult->setData($message);
+            }
+            return response($this->apiResult->toResponse());
+        } catch (Exception $ex) {
+            $this->apiResult->setError(
+                "System error when change active Status",
+                $ex->getMessage()
+            );
+        } finally {
+            return response($this->apiResult->toResponse());
+        }
+    }
 }

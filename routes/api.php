@@ -42,6 +42,7 @@ Route::middleware('auth:api')->group(function (){
         Route::post('create', 'Api\ProductController@addNewProduct');
         Route::get('list-product', 'Api\ProductController@getListProduct');
         Route::post('update', 'Api\ProductController@updateProduct');
+        Route::post('change-active-status', 'Api\ProductController@changeActiveStatus');
     });
 });
 
