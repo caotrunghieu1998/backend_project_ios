@@ -222,21 +222,24 @@ class UserController extends Controller
         try {
             $user = $request->user();
             $isAdmin = User::join('user_types', 'users.type_id', '=', 'user_types.id')
-                ->where([
-                    ['user_types.rule', '=', 'ADMIN'],
-                    ['users.id', '=', $user->id]
-                ])
+            ->where([
+                ['user_types.rule', '=', 'ADMIN'],
+                ['users.id', '=', $user->id]
+            ])
                 ->select('users.*')
                 ->first();
             if ($isAdmin) {
-                // Register User
-                $listUser = User::join('user_types', 'users.type_id', '=', 'user_types.id')
-                    ->where([
-                        ['user_types.rule', '!=', 'ADMIN']
-                    ])
+                // Get list user
+                $query = User::join('user_types', 'users.type_id', '=', 'user_types.id')
+                ->where([
+                    ['user_types.rule', '!=', 'ADMIN']
+                ])
                     ->select('users.*', 'user_types.rule')
-                    ->orderBy('user_types.id')
-                    ->get();
+                    ->orderBy('user_types.id');
+                if ($request->has('keyword')) {
+                    $query->where('users.name', 'like', '%' . $request->keyword . '%');
+                }
+                $listUser = $query->get();
                 $this->apiResult->setData($listUser);
             } else {
                 $this->apiResult->setError("You are not ADMIN type");
