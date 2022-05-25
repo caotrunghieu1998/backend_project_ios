@@ -15,8 +15,6 @@ use Intervention\Image\ImageManagerStatic;
 class ProductController extends Controller
 {
     private $apiResult;
-    private $URL_SAVE_IMAGE = 'images/products/';
-    private $URL_DEFAULT_IMAGE = '/images/products/default.png';
 
     // Construct
     function __construct()
@@ -50,31 +48,10 @@ class ProductController extends Controller
                         'quantity' => $request->quantity,
                         'type' => $request->type,
                         'unit' => $request->unit,
+                        'image' => $request->image ? $request->image : ""
                     ]);
                     // Check the image of product
-                    $image = $request->file('image');
-                    if ($image) {
-                        // Get file name
-                        $image_name = $image->getClientOriginalName();
-                        $arr = explode('.', $image_name);
-                        $check_file = end($arr);
-                        if ($check_file) {
-                            if (
-                                strtolower($check_file) == 'jpg' ||
-                                strtolower($check_file) == 'jpeg' ||
-                                strtolower($check_file) == 'png'
-                            ) {
-                                // Insert images
-                                $avatar_name = $product->id . '.' . $image->getClientOriginalExtension();
-                                $product->image = $this->URL_SAVE_IMAGE . $avatar_name;
-                                $product->save();
-                                // Save image 600 x 600
-                                $image_resize = ImageManagerStatic::make($image->getRealPath());
-                                $image_resize->resize(600, 600);
-                                $image_resize->save(public_path($this->URL_SAVE_IMAGE . $avatar_name));
-                            }
-                        }
-                    }
+
                     $this->apiResult->setData("Create Product Success");
                 }
             }
@@ -100,7 +77,7 @@ class ProductController extends Controller
             } else {
                 // Get list product
                 $query = Product::select('products.*')
-                ->orderBy('products.id');
+                    ->orderBy('products.id');
                 if ($request->has('keyword')) {
                     $query->where('products.name', 'like', '%' . $request->keyword . '%');
                 }
@@ -108,11 +85,6 @@ class ProductController extends Controller
                     $query->where('products.isActive', '=', true);
                 }
                 $listProduct = $query->get();
-                foreach ($listProduct as $product) {
-                    if($product->image == null){
-                        $product->image = $this->URL_DEFAULT_IMAGE;
-                    }
-                }
                 $this->apiResult->setData($listProduct);
             }
             return response($this->apiResult->toResponse());
@@ -150,40 +122,17 @@ class ProductController extends Controller
                 } else {
                     // Check product
                     $checkProduct = Product::where('id', $request->id)->first();
-                    if($checkProduct){
+                    if ($checkProduct) {
                         // Update Product
                         $checkProduct
-                        ->update([
-                            'name' => $request->name,
-                            'price' => $request->price,
-                            'quantity' => $request->quantity,
-                            'type' => $request->type,
-                            'unit' => $request->unit,
-                        ]);
-                        // Check the image of product
-                        $image = $request->file('image');
-                        if ($image) {
-                            // Get file name
-                            $image_name = $image->getClientOriginalName();
-                            $arr = explode('.', $image_name);
-                            $check_file = end($arr);
-                            if ($check_file) {
-                                if (
-                                    strtolower($check_file) == 'jpg' ||
-                                    strtolower($check_file) == 'jpeg' ||
-                                    strtolower($check_file) == 'png'
-                                ) {
-                                    // Insert images
-                                    $avatar_name = $checkProduct->id . '.' . $image->getClientOriginalExtension();
-                                    $checkProduct->image = $this->URL_SAVE_IMAGE . $avatar_name;
-                                    $checkProduct->save();
-                                    // Save image 600 x 600
-                                    $image_resize = ImageManagerStatic::make($image->getRealPath());
-                                    $image_resize->resize(600, 600);
-                                    $image_resize->save(public_path($this->URL_SAVE_IMAGE . $avatar_name));
-                                }
-                            }
-                        }
+                            ->update([
+                                'name' => $request->name,
+                                'price' => $request->price,
+                                'quantity' => $request->quantity,
+                                'type' => $request->type,
+                                'unit' => $request->unit,
+                                'image' => $request->image ? $request->image : ""
+                            ]);
                         $this->apiResult->setData("Update Product Success");
                     } else {
                         $this->apiResult->setError("Not found product");
