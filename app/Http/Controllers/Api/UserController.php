@@ -237,7 +237,9 @@ class UserController extends Controller
                     ->select('users.*', 'user_types.rule')
                     ->orderBy('user_types.id');
                 if ($request->has('keyword')) {
-                    $query->where('users.name', 'like', '%' . $request->keyword . '%');
+                    $query->where('users.name', 'like', '%' . $request->keyword . '%')
+                    ->orWhere('users.phone', 'like', '%' . $request->keyword . '%')
+                    ->orWhere('users.email', 'like', '%' . $request->keyword . '%');
                 }
                 $listUser = $query->get();
                 $this->apiResult->setData($listUser);
